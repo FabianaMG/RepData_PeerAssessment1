@@ -1,25 +1,259 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "Programming Assignment 1 - Reproducible Research"
+author: "Fabiana Glenn"
+date: "June 16, 2016"
+output: html_document
 ---
 
+### Loading and pre-processing the data
+    
+- Downloading data 
 
-## Loading and preprocessing the data
+```{r download_data, echo=TRUE, results='hide'}
+fileurl <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
+download.file(fileurl, "PA1.zip", method = "curl")
+unzip("PA1.zip")
+list.files()
+```   
+
+- Reading data
+
+```{r read_data, echo=TRUE}
+act <- read.csv("activity.csv", header = TRUE)
+head(act)
+```    
 
 
+###  1) What is mean total number of steps taken per day?    
+    
+Calculate the total number of steps taken per day    
 
-## What is mean total number of steps taken per day?
+```{r q1s1, echo=TRUE}
+stepdf <- aggregate(act$steps, list(date=act$date), sum, na.rm=TRUE)
+names(stepdf) <- c("date", "steps")
+stepdf
+```    
+
+If you do not understand the difference between a histogram and a barplot, research the difference between them. Make a histogram of the total number of steps taken each day    
+
+```{r q1s2, echo=TRUE}
+hist(stepdf$steps, 10, main = "Histogram of steps per day", ylim = c(0,25), xlab = "Steps per day", col = "#E0E0E0")
+```    
+    
+Calculate and report the mean and median of the total number of steps taken per day        
+
+ - Mean
+
+```{r q1s3, echo=TRUE}
+amean <- aggregate(act$steps, list(date=act$date), mean, na.rm=TRUE)
+names(amean) <- c("date", "mean")
+amean
+```
+
+- There are NaN (not a number) values because some days had no number values at all for steps, just NAs, which were considered zero. Hence, when you divide something by zero, you get NaN.    
+
+Averaged mean per day:
+
+```{r q1s4, echo=TRUE}
+mean1 <- mean(amean$mean, na.rm = TRUE)
+mean1
+```
+
+ - Median 
+
+```{r q1s5, echo=TRUE}
+amedian <- aggregate(act$steps, list(date=act$date), median, na.rm=TRUE)
+names(amedian) <- c("date", "median")
+amedian
+```    
+
+- There are NA values because some days didn't have any number value for steps at all, just NAs. Hence, the middle point of the distribution could only be NA as well.    
+
+Average median per day
+
+```{r q1s6, echo=TRUE}
+median1 <- median(amedian$median, na.rm = TRUE)
+median1
+```
+
+### 2) What is the average daily activity pattern?
+
+Make a time series plot (i.e. 𝚝𝚢𝚙𝚎 = "𝚕") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+
+- Find 5-minute interval average
+
+```{r q2s1, echo=TRUE}
+intv <- aggregate(act$steps, list(interval=act$interval), mean, na.rm = TRUE)
+names(intv) <- c("interval", "steps")
+intv
+```
+
+- Create plot
+
+```{r q2s2, echo=TRUE}
+plot(intv$interval, intv$steps, type = "l", xlab = "5-min interval", ylab = "Average steps", main = "Average steps per 5-minute interval across all days", col = "green", lwd = 2)
+```
+     
+Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+
+```{r q2s3, echo=TRUE}
+which.max(intv$steps)
+```
+
+```{r q2s4, echo=TRUE}
+intv[104, ]
+```
+
+- It's the interval at 835 minutes (with 206 average steps).
+
+### 3) Imputing missing values
+
+Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with 𝙽𝙰s)
+
+```{r q3s1, echo=TRUE}
+sum(is.na(act$steps))
+```
+
+- Find the percentage of missing values
+
+```{r q3s2, echo=TRUE}
+sum(is.na(act$steps)) / length(act$steps)
+```
+
+- That means, 13.1% of the data are missing values.
+
+Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
+
+- Create parallel dataset
+```{r q3s3, echo=TRUE}
+act2 <- read.csv("activity.csv", header = TRUE)
+```
+
+- I will consider the missing values to be the mean of 5-minute intervals. I'll use "tapply" instead of "aggregate" because "tapply" creates an array instead of a data.frame, which is what we need to impute values.
+
+```{r q3s4, echo=TRUE}
+NAs <- is.na(act2$steps)
+avg_interval <- tapply(act2$steps, act2$interval, mean, na.rm = TRUE)
+act2$steps[NAs] <- avg_interval[as.character(act2$interval[NAs])]
+```
+
+Create a new dataset that is equal to the original dataset but with the missing data filled in.
+
+```{r q3s5, echo=TRUE}
+head(act2)
+summary(act2)
+```
+
+Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+
+- Find the total number of steps per day
+
+```{r q3s6, echo=TRUE}
+stepdf2 <- aggregate(act2$steps, list(date=act2$date), sum)
+names(stepdf2) <- c("date", "sum")
+stepdf2
+```
+
+- Make a histogram
+
+```{r q3s7}
+hist(stepdf2$sum, 10, main = "Histogram of steps per day", xlab = "Steps per day", ylim = c(0,25), col = "#FFFFCC")
+
+```
+
+The impact of distributing missing values is that the histogram looks more like a normal distribution now.
+
+- Find the mean number of steps per day
+
+```{r q3s8, echo=TRUE}
+amean2 <- aggregate(act2$steps, list(date=act2$date), mean)
+names(amean2) <- c("date", "mean")
+amean2
+```
+
+- Total average:
+
+```{r q3s9}
+mean2 <- mean(amean2$mean)
+mean2
+```
+
+- Find the median number of steps per day
+
+```{r q3s10, echo=TRUE}
+amedian2 <- aggregate(act2$steps, list(date=act2$date), median)
+names(amedian2) <- c("date", "median")
+amedian2
+```
+
+- Total median:
+
+```{r q3s11, echo=TRUE}
+median2 <- median(amedian2$median)
+```
+
+The impact on the total mean is:
+
+```{r q3s12, echo=TRUE}
+mean1 - mean2
+```
+
+The impact on the total median is:
+
+```{r q3s13, echo=TRUE}
+median1 - median2
+```
+
+Therefore, imputting the 5-min interval average on missing values had no impact whatsoever in the mean and median, even though there were 13% of missing values.
+
+### 4) Are there differences in activity patterns between weekdays and weekends?
+
+Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.
+
+- Convert date column to 'date' format
+
+```{r q4s1, echo=TRUE}
+act2$date <- as.Date(as.character(act2$date))
+````
+
+- Sort dates by weekdays and weekend and create new level
+
+```{r q4s2, echo=TRUE}
+act2$date <- as.Date(as.character(act2$date))
+act2$days <- weekdays(act2$date, abbreviate = TRUE)
+act2$days <- gsub("Sat|Sun", "weekend", act2$days)
+act2$days <- gsub("Mon|Tue|Wed|Thu|Fri", "weekday", act2$days)
+unique(act2$days)
+````
+
+Make a panel plot containing a time series plot (i.e. 𝚝𝚢𝚙𝚎 = "𝚕") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). See the README file in the GitHub repository to see an example of what this plot should look like using simulated data.
+
+```{r q4s3, echo=TRUE}
+wday <- act2[ which(act2$days == "weekday"), ]
+wdayint <- aggregate(wday$steps, list(int=wday$interval), mean)
+```
+
+```{r q4s4, echo=TRUE}
+wend <- act2[ which(act2$days == "weekend"), ]
+wendint <- aggregate(wend$steps, list(int=wend$interval), mean)
+```
+
+- Create tidy dataset
+
+```{r q4s5, echo=TRUE}
+tidyg <- data.frame(int=wdayint$int, Weekend=wendint$x, Weekday=wdayint$x)
+library(reshape2)
+tidyg <- melt(tidyg, id="int")
+names(tidyg) <- c("int", "day", "mean")
+```
+
+- Create graph
+
+```{r q4s6, echo=TRUE}
+library(ggplot2)
+p <- ggplot(tidyg, aes(x=int, y=mean)) + geom_line(color = "orange") + facet_grid(day ~ .)
+p <- p + labs(x="5 min interval", y="Average steps per interval")
+p + ggtitle("Comparison of average steps between Weekdays and Weekends")
+```
 
 
-
-## What is the average daily activity pattern?
-
-
-
-## Imputing missing values
-
-
-
-## Are there differences in activity patterns between weekdays and weekends?
