@@ -256,4 +256,6 @@ p <- p + labs(x="5 min interval", y="Average steps per interval")
 p + ggtitle("Comparison of average steps between Weekdays and Weekends")
 ```
 
+Yes, there are differences between the two graphs. For weekdays, one can see that a person in average start taking steps earlier in the day and then there is a peak (we can assume that the person is going to work or school). Then, the average steps count is steeply reduced until end of afternoon, when there's a peak again. We can assume that most people work or study sitting down, and then take steps to go back home.
 
+While on the weekends, we see that there aren't any steep peaks like on weekdays. We can assume that most people "wake up slow". However, the average person is a lot more active during the weekends, because the average step count is higher throughout the day.
